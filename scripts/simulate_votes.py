@@ -71,3 +71,6 @@ if __name__ == "__main__":
     d = float(sys.argv[2]) if len(sys.argv) > 2 else 0.8
     w = [float(x) for x in sys.argv[3].split(",")] if len(sys.argv) > 3 else None
     asyncio.run(main(n, d, w))
+
+    # python3 simulate_votes.py 500 0.01 90,10
+    # python3 simulate_votes.py 500 0.01 85,5,5,5
