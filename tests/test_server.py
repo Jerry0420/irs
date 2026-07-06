@@ -299,6 +299,49 @@ def test_broadcast_between_clients(client):
         assert recv_type(b, "question:switch")["question"]["id"] == target
 
 
+# ---------- 儲存分離：題目入版控、票數不入 ----------
+
+def test_votes_stored_outside_questions_file(client):
+    import json as _json
+    from app import main as appmain
+
+    data = get_state(client)
+    q = data["questions"][0]
+    with client.websocket_connect("/ws") as ws:
+        recv_type(ws, "state:init")
+        cast(ws, q["id"], q["options"][0]["id"])
+        recv_type(ws, "vote:accepted")
+        recv_type(ws, "vote:update")
+
+    appmain.state._write()  # 立即落盤（略過 debounce）
+    qraw = _json.loads(appmain.state.file.read_text(encoding="utf-8"))
+    assert all("votes" not in x and "pins" not in x and "voters" not in x
+               for x in qraw["questions"])          # 題目檔不含任何投票結果
+    assert "active_question_id" not in qraw          # 切題也不會弄髒題目檔
+
+    rraw = _json.loads(appmain.state.results_file.read_text(encoding="utf-8"))
+    assert sum(rraw["results"][q["id"]]["votes"].values()) == 1
+
+
+def test_results_survive_reload(client):
+    from app import main as appmain
+
+    data = get_state(client)
+    q = data["questions"][0]
+    oid = q["options"][0]["id"]
+    with client.websocket_connect("/ws") as ws:
+        recv_type(ws, "state:init")
+        cast(ws, q["id"], oid)
+        recv_type(ws, "vote:accepted")
+        recv_type(ws, "vote:update")
+
+    appmain.state._write()
+    appmain.state.load()   # 模擬重啟：題目與票數都要還原
+    restored = appmain.state.get(q["id"])
+    assert restored.votes.get(oid) == 1
+    assert "voter-1" in restored.voters
+
+
 # ---------- 後台驗證 ----------
 
 def test_admin_login(client):

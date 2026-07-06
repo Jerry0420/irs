@@ -106,10 +106,17 @@ def _seed_questions() -> list[Question]:
 
 
 class AppState:
+    #: 題目定義欄位（寫入 questions.json，適合入版控）
+    DEFINITION_FIELDS = {"id", "title", "type", "options"}
+    #: 投票結果欄位（寫入 results.json，執行期資料、不入版控）
+    RESULT_FIELDS = {"round", "votes", "pins", "voters"}
+
     def __init__(self, data_dir: Path | None = None):
         self.data_dir = Path(data_dir or os.environ.get("IRS_DATA_DIR", "data"))
         self.file = self.data_dir / "questions.json"
+        self.results_file = self.data_dir / "results.json"
         self.uploads_dir = self.data_dir / "uploads"
+        self._last_written_defs: str | None = None
         self.questions: list[Question] = []
         self.active_question_id: Optional[str] = None
         self._save_task: Optional[asyncio.Task] = None
@@ -122,8 +129,10 @@ class AppState:
         self.uploads_dir.mkdir(parents=True, exist_ok=True)
         if self.file.exists():
             raw = json.loads(self.file.read_text(encoding="utf-8"))
+            # 舊格式相容：questions.json 內可能還帶著票數與 active_question_id
             self.questions = [Question(**q) for q in raw.get("questions", [])]
             self.active_question_id = raw.get("active_question_id")
+            self._load_results()
             if self.active_question_id and not self.get(self.active_question_id):
                 self.active_question_id = None
         else:
@@ -132,14 +141,40 @@ class AppState:
             self._write()
         self.sweep_orphan_uploads()  # 啟動時順帶清理歷史孤兒檔
 
-    def _write(self) -> None:
-        payload = {
-            "questions": [q.model_dump() for q in self.questions],
-            "active_question_id": self.active_question_id,
-        }
-        tmp = self.file.with_suffix(".tmp")
+    def _load_results(self) -> None:
+        if not self.results_file.exists():
+            return
+        raw = json.loads(self.results_file.read_text(encoding="utf-8"))
+        self.active_question_id = raw.get("active_question_id", self.active_question_id)
+        for q in self.questions:
+            data = raw.get("results", {}).get(q.id)
+            if not data:
+                continue
+            q.round = data.get("round", 0)
+            q.votes = data.get("votes", {})
+            q.pins = [Pin(**p) for p in data.get("pins", [])]
+            q.voters = {k: VoteRecord(**v) for k, v in data.get("voters", {}).items()}
+
+    @staticmethod
+    def _atomic_write(path: Path, payload: dict) -> None:
+        tmp = path.with_suffix(".tmp")
         tmp.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-        tmp.replace(self.file)
+        tmp.replace(path)
+
+    def _write(self) -> None:
+        # 題目定義（入版控）：內容沒變就不重寫，投票期間 git 保持乾淨
+        defs = {"questions": [q.model_dump(include=self.DEFINITION_FIELDS)
+                              for q in self.questions]}
+        defs_text = json.dumps(defs, ensure_ascii=False, sort_keys=True)
+        if defs_text != self._last_written_defs:
+            self._atomic_write(self.file, defs)
+            self._last_written_defs = defs_text
+        # 投票結果（不入版控）
+        self._atomic_write(self.results_file, {
+            "active_question_id": self.active_question_id,
+            "results": {q.id: q.model_dump(include=self.RESULT_FIELDS)
+                        for q in self.questions},
+        })
 
     def save_soon(self) -> None:
         """Debounce 寫盤，避免大量投票時每票一次磁碟 IO。"""

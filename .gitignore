@@ -3,3 +3,7 @@
 __pycache__/
 *.pyc
 .pytest_cache/
+
+# 投票結果（執行期資料；題目定義在 data/questions.json，有入版控）
+data/results.json
+data/*.tmp

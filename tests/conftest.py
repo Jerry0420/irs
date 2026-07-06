@@ -13,8 +13,10 @@ from app import main as appmain
 @pytest.fixture()
 def client():
     # 每個測試都從乾淨的種子資料開始
-    if appmain.state.file.exists():
-        appmain.state.file.unlink()
+    for f in (appmain.state.file, appmain.state.results_file):
+        if f.exists():
+            f.unlink()
+    appmain.state._last_written_defs = None
     appmain.state.load()
     with TestClient(appmain.app, headers={"X-Admin-Token": "0000"}) as c:
         yield c
