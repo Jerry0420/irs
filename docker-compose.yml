@@ -1,0 +1,8 @@
+services:
+  irs:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/app/data   # 題目 JSON 與上傳圖片持久化，容器重啟不遺失
+    restart: unless-stopped

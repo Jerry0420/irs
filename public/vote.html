@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>即時回饋</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+  <div class="page">
+    <div id="lock-banner" class="lock-banner" hidden>
+      <div><strong>投票成功</strong>，請等待下一題</div>
+      <button id="btn-cancel-vote" class="btn btn--small btn--ghost">取消投票，重新選擇</button>
+    </div>
+
+    <div id="q-number" class="q-number-chip" hidden></div>
+    <h2 id="q-title" class="question-title" hidden></h2>
+
+    <div id="options" class="option-list" hidden></div>
+    <div id="cloud" hidden></div>
+    <div id="map" hidden></div>
+
+    <div id="waiting" class="waiting">請稍候，主持人即將開始……</div>
+  </div>
+
+  <script src="/static/js/lightbox.js"></script>
+  <script src="/static/js/ws-client.js"></script>
+  <script src="/static/js/wordcloud.js"></script>
+  <script src="/static/js/pinmap.js"></script>
+  <script src="/static/js/vote.js"></script>
+</body>
+</html>

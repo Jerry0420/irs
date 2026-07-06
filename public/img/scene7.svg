@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <defs>
+    <linearGradient id="g7" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#A67C52"/>
+      <stop offset="1" stop-color="#E6D2B5"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="300" fill="url(#g7)"/>
+  <circle cx="70" cy="70" r="46" fill="#ffffff" opacity="0.12"/>
+  <circle cx="330" cy="220" r="72" fill="#ffffff" opacity="0.10"/>
+  <circle cx="250" cy="60" r="24" fill="#ffffff" opacity="0.15"/>
+  <text x="200" y="162" text-anchor="middle" font-family="Noto Serif TC, Songti TC, PMingLiU, serif"
+        font-size="40" letter-spacing="8" fill="#ffffff" opacity="0.92">兒時庭院</text>
+</svg>

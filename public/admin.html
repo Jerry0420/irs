@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>主持人後台 — 即時回饋</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+  <div class="page page--wide">
+    <div class="qr-box">
+      <img id="qr-img" alt="觀眾投票頁 QR Code">
+      <div class="qr-info">
+        <div>觀眾掃描 QR Code 或輸入網址即可進入投票：</div>
+        <div id="qr-url" class="qr-url"></div>
+      </div>
+    </div>
+
+    <div class="admin-toolbar">
+      <button id="btn-new" class="btn btn--small">＋ 新增題目</button>
+      <button id="btn-project" class="btn btn--small btn--primary-outline">🖥 全螢幕顯示目前題目</button>
+      <span class="spacer"></span>
+      <span id="conn-status" class="conn-status">連線中……</span>
+    </div>
+
+    <div id="cards" class="card-grid"></div>
+  </div>
+
+  <div id="modal-backdrop" class="modal-backdrop" hidden>
+    <div class="modal">
+      <h2 id="modal-title">新增題目</h2>
+      <div class="field">
+        <label for="f-title">題目文字</label>
+        <input type="text" id="f-title" placeholder="請輸入題目">
+      </div>
+      <div class="field">
+        <label for="f-type">選項類型</label>
+        <select id="f-type">
+          <option value="text">文字選項（n 個，文字雲呈現）</option>
+          <option value="image4">四張圖片（2×2 排列，插針呈現）</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>選項</label>
+        <div id="f-options"></div>
+        <button id="btn-add-option" class="btn btn--small btn--ghost" type="button">＋ 新增選項</button>
+      </div>
+      <div id="f-error" class="form-error"></div>
+      <div class="modal-actions">
+        <button id="btn-cancel" class="btn btn--small btn--ghost" type="button">取消</button>
+        <button id="btn-save" class="btn btn--small" type="button">儲存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 管理密碼登入（覆蓋層） -->
+  <div id="login-backdrop" class="modal-backdrop login-backdrop" hidden>
+    <div class="modal login-modal">
+      <h2>主持人後台</h2>
+      <div class="field">
+        <label for="login-pass">請輸入管理密碼</label>
+        <input type="password" id="login-pass" inputmode="numeric" autocomplete="off" placeholder="密碼">
+      </div>
+      <div id="login-error" class="form-error"></div>
+      <div class="modal-actions">
+        <button id="login-btn" class="btn btn--small" type="button">進入後台</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 全螢幕結果投影（覆蓋層） -->
+  <div id="projection" class="projection" hidden>
+    <header class="display-head">
+      <div class="display-brand"><span id="p-num" class="subtitle"></span></div>
+      <div id="p-total" class="display-total"></div>
+    </header>
+
+    <h1 id="p-title" class="display-title" hidden></h1>
+
+    <main class="display-content">
+      <div id="p-cloud" hidden></div>
+      <div id="p-map" hidden></div>
+      <div id="p-waiting" class="waiting display-waiting">尚未選擇進行中的題目</div>
+    </main>
+
+    <div class="projection-controls">
+      <button id="p-prev" class="btn btn--small btn--ghost">‹ 上一題</button>
+      <button id="p-next" class="btn btn--small btn--ghost">下一題 ›</button>
+      <button id="p-reset" class="btn btn--small btn--primary-outline">清除數據</button>
+      <button id="p-exit" class="btn btn--small btn--danger">離開全螢幕</button>
+    </div>
+
+    <aside class="display-qr">
+      <img id="p-qr" alt="投票 QR Code">
+      <div id="p-url" class="display-qr-url"></div>
+      <div class="display-qr-hint">掃描加入投票</div>
+    </aside>
+  </div>
+
+  <script src="/static/js/lightbox.js"></script>
+  <script src="/static/js/ws-client.js"></script>
+  <script src="/static/js/wordcloud.js"></script>
+  <script src="/static/js/pinmap.js"></script>
+  <script src="/static/js/admin.js"></script>
+</body>
+</html>
