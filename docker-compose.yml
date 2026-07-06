@@ -1,6 +1,7 @@
 services:
   irs:
     build: .
+    user: "1000:1000"      # 以主機使用者身分執行，data/ 檔案不會變成 root 擁有
     ports:
       - "3000:3000"
     volumes:
