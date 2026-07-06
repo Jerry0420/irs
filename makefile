@@ -1,6 +1,6 @@
 restart_ngrok:
 	@echo "Restarting ngrok..."
-	@pkill -f ngrok || true
+	@pkill -x ngrok || true
 	@sleep 1
 	@nohup ngrok http 3000 > ngrok.log 2>&1 &
 	@echo "Waiting for ngrok tunnel..."
