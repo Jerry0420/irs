@@ -321,7 +321,7 @@ a.btn { text-decoration: none; text-align: center; line-height: 1.9; }
    所以既不影響按鈕置中、也不會壓到上方主內容 */
 .projection-footer {
   position: relative;
-  min-height: 96px;
+  min-height: 140px;   /* 為右側 QR 卡片保留高度，避免壓到主內容 */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -411,10 +411,10 @@ a.btn { text-decoration: none; text-align: center; line-height: 1.9; }
   padding: 8px 12px;
 }
 
-.display-qr img { width: 76px; height: 76px; background: #fff; border-radius: 6px; padding: 3px; }
-.display-qr-text { max-width: 180px; }
-.display-qr-url { font-size: .75rem; color: var(--accent); word-break: break-all; }
-.display-qr-hint { font-size: .8rem; color: var(--ink-soft); letter-spacing: .15em; }
+.display-qr img { width: 120px; height: 120px; background: #fff; border-radius: 6px; padding: 4px; }
+.display-qr-text { max-width: none; }
+.display-qr-url { font-size: .85rem; color: var(--accent); white-space: nowrap; }
+.display-qr-hint { font-size: .95rem; color: var(--ink-soft); letter-spacing: .15em; }
 
 /* 螢幕不夠寬、QR 會碰到置中按鈕群時收起 QR，控制鈕優先 */
 @media (max-width: 960px) {
