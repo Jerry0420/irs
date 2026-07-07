@@ -83,18 +83,21 @@
       <div id="p-waiting" class="waiting display-waiting">尚未選擇進行中的題目</div>
     </main>
 
-    <div class="projection-controls">
-      <button id="p-prev" class="btn btn--small btn--ghost">‹ 上一題</button>
-      <button id="p-next" class="btn btn--small btn--ghost">下一題 ›</button>
-      <button id="p-reset" class="btn btn--small btn--primary-outline">清除數據</button>
-      <button id="p-exit" class="btn btn--small btn--danger">離開全螢幕</button>
+    <div class="projection-footer">
+      <div class="projection-controls">
+        <button id="p-prev" class="btn btn--small btn--ghost">‹ 上一題</button>
+        <button id="p-next" class="btn btn--small btn--ghost">下一題 ›</button>
+        <button id="p-reset" class="btn btn--small btn--primary-outline">清除數據</button>
+        <button id="p-exit" class="btn btn--small btn--danger">離開全螢幕</button>
+      </div>
+      <aside class="display-qr">
+        <img id="p-qr" alt="投票 QR Code">
+        <div class="display-qr-text">
+          <div class="display-qr-hint">掃描加入投票</div>
+          <div id="p-url" class="display-qr-url"></div>
+        </div>
+      </aside>
     </div>
-
-    <aside class="display-qr">
-      <img id="p-qr" alt="投票 QR Code">
-      <div id="p-url" class="display-qr-url"></div>
-      <div class="display-qr-hint">掃描加入投票</div>
-    </aside>
   </div>
 
   <script src="/static/js/lightbox.js"></script>

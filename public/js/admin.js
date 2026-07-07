@@ -132,14 +132,15 @@
     card.innerHTML = `
       <div class="q-head">
         <span class="q-num"></span>
-        <h3></h3>
         <span class="badge type"></span>
         <span class="badge live" hidden>進行中</span>
+        <span class="spacer"></span>
         <span class="order-btns">
           <button class="order-btn act-up" title="上移">↑</button>
           <button class="order-btn act-down" title="下移">↓</button>
         </span>
       </div>
+      <h3 class="q-title"></h3>
       <div class="vote-bars"></div>
       <div class="preview"></div>
       <div class="q-actions">
@@ -333,6 +334,12 @@
   const voteUrl = `${location.origin}/`;
   $("qr-url").textContent = voteUrl;
   $("qr-img").src = `/api/qrcode?text=${encodeURIComponent(voteUrl)}`;
+  // 點 QR Code 可放大（後台與投影頁）
+  for (const id of ["qr-img", "p-qr"]) {
+    const img = $(id);
+    img.style.cursor = "zoom-in";
+    img.addEventListener("click", () => openLightbox(img.src, "掃描加入投票", { stretch: true }));
+  }
 
   // ---------- 全螢幕投影（結果顯示） ----------
 

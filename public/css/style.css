@@ -292,6 +292,8 @@ a.btn { text-decoration: none; text-align: center; line-height: 1.9; }
   max-width: 94vw;
   max-height: 84vh;
   object-fit: contain;
+  background: #fff;   /* QR Code 為透明底深色點陣，需白底才可掃描 */
+  padding: 8px;
   border-radius: 10px;
   box-shadow: 0 8px 40px rgba(0, 0, 0, .5);
 }
@@ -315,11 +317,27 @@ a.btn { text-decoration: none; text-align: center; line-height: 1.9; }
   gap: 12px;
 }
 
+/* 底部列：控制鈕以全寬置中；QR 絕對定位貼右，但底部列保留其高度，
+   所以既不影響按鈕置中、也不會壓到上方主內容 */
+.projection-footer {
+  position: relative;
+  min-height: 96px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .projection-controls {
   display: flex;
   justify-content: center;
   gap: 12px;
-  padding-top: 4px;
+}
+
+.projection-footer .display-qr {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 .display-head {
@@ -383,21 +401,26 @@ a.btn { text-decoration: none; text-align: center; line-height: 1.9; }
 .display-waiting { font-size: 1.6rem; }
 
 .display-qr {
-  position: fixed;
-  right: 28px;
-  bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   background: var(--bg-card);
   border: 1px solid var(--line);
   border-radius: 12px;
   box-shadow: var(--shadow);
-  padding: 12px;
-  text-align: center;
-  width: 150px;
+  padding: 8px 12px;
 }
 
-.display-qr img { width: 118px; height: 118px; background: #fff; border-radius: 6px; padding: 4px; }
-.display-qr-url { font-size: .75rem; color: var(--accent); word-break: break-all; margin-top: 6px; }
-.display-qr-hint { font-size: .8rem; color: var(--ink-soft); letter-spacing: .15em; margin-top: 2px; }
+.display-qr img { width: 76px; height: 76px; background: #fff; border-radius: 6px; padding: 3px; }
+.display-qr-text { max-width: 180px; }
+.display-qr-url { font-size: .75rem; color: var(--accent); word-break: break-all; }
+.display-qr-hint { font-size: .8rem; color: var(--ink-soft); letter-spacing: .15em; }
+
+/* 螢幕不夠寬、QR 會碰到置中按鈕群時收起 QR，控制鈕優先 */
+@media (max-width: 960px) {
+  .display-qr { display: none; }
+  .projection-footer { min-height: 0; }
+}
 
 /* ===== 後台 ===== */
 .admin-toolbar {
@@ -437,8 +460,9 @@ a.btn { text-decoration: none; text-align: center; line-height: 1.9; }
   box-shadow: 0 0 0 6px rgba(51, 105, 30, .18);
 }
 
-.q-card .q-head { display: flex; align-items: baseline; gap: 8px; }
-.q-card .q-head h3 { font-size: 1.05rem; flex: 1; }
+.q-card .q-head { display: flex; align-items: center; gap: 8px; }
+.q-card .q-head .spacer { flex: 1; }
+.q-card .q-title { font-size: 1.05rem; margin-top: -4px; }
 
 .q-num {
   font-size: .85rem;
