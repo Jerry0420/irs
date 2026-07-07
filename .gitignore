@@ -7,3 +7,8 @@ __pycache__/
 # 投票結果（執行期資料；題目定義在 data/questions.json，有入版控）
 data/results.json
 data/*.tmp
+
+# 隧道/伺服器執行紀錄
+cloudflared.log
+ngrok.log
+uvicorn.log
