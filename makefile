@@ -15,14 +15,17 @@ restart_server:
 	@sleep 1
 	@nohup /home/ec2-user/irs/run.sh > uvicorn.log 2>&1 &
 
-# Cloudflare Tunnel（免費、無 ngrok 警告頁）。需先安裝 cloudflared：
+# Cloudflare Tunnel（免費、無 ngrok 警告頁）。安裝（免 sudo，放專案目錄即可）：
 #   curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 \
-#     -o /usr/local/bin/cloudflared && chmod +x /usr/local/bin/cloudflared
+#     -o ./cloudflared && chmod +x ./cloudflared
+CLOUDFLARED := $(shell command -v cloudflared 2>/dev/null || echo ./cloudflared)
+
 restart_tunnel:
+	@test -x "$(CLOUDFLARED)" || { echo "找不到 cloudflared，請先執行 makefile 註解中的安裝指令"; exit 1; }
 	@echo "Restarting Cloudflare Tunnel..."
 	@pkill -x cloudflared || true
 	@sleep 1
-	@nohup cloudflared tunnel --url http://localhost:3000 > cloudflared.log 2>&1 &
+	@nohup $(CLOUDFLARED) tunnel --url http://localhost:3000 > cloudflared.log 2>&1 &
 	@echo "Waiting for tunnel URL..."
 	@for i in $$(seq 1 15); do \
 	  URL=$$(grep -oE 'https://[a-z0-9-]+\.trycloudflare\.com' cloudflared.log | head -1); \

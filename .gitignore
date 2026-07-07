@@ -8,7 +8,8 @@ __pycache__/
 data/results.json
 data/*.tmp
 
-# 隧道/伺服器執行紀錄
+# 隧道/伺服器執行紀錄與本機工具
 cloudflared.log
 ngrok.log
 uvicorn.log
+/cloudflared
