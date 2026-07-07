@@ -15,7 +15,7 @@ restart_server:
 	@sleep 1
 	@nohup /home/ec2-user/irs/run.sh > uvicorn.log 2>&1 &
 
-# sudo curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd6 -o /usr/local/bin/cloudflared && sudo chmod +x /usr/local/bin/cloudflared
+# curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -o ./cloudflared && chmod +x ./cloudflared && sudo mv ./cloudflared /usr/local
 restart_tunnel:
 	@echo "Restarting Cloudflare Tunnel..."
 	@pkill -x cloudflared || true
