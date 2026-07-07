@@ -18,6 +18,7 @@ import httpx
 import websockets
 
 BASE = "http://127.0.0.1:3000"
+# BASE = "https://catlike-amber-unluckily.ngrok-free.dev"
 
 
 async def main(count: int, delay: float, fixed_weights: list[float] | None = None) -> None:
