@@ -27,3 +27,15 @@ restart_tunnel:
 	  if [ -n "$$URL" ]; then echo "$$URL"; exit 0; fi; \
 	  sleep 1; \
 	done; echo "取得網址逾時，請查看 cloudflared.log"; exit 1
+
+kill_ngrok:
+	@echo "Killing ngrok..."
+	@pkill -x ngrok || true
+
+kill_server:
+	@echo "Killing server..."
+	@pkill -x uvicorn || true
+
+kill_tunnel:
+	@echo "Killing Cloudflare Tunnel..."
+	@pkill -x cloudflared || true
