@@ -6,8 +6,10 @@ function openLightbox(src, caption = "", opts = {}) {
     box = document.createElement("div");
     box.id = "lightbox";
     box.className = "lightbox";
-    box.innerHTML = '<img alt=""><div class="lightbox-caption"></div>';
-    box.addEventListener("click", () => { box.hidden = true; });
+    box.innerHTML = '<div class="lightbox-frame"><img alt="">' +
+      '<button type="button" class="lightbox-close" aria-label="關閉">✕</button></div>' +
+      '<div class="lightbox-caption"></div>';
+    box.addEventListener("click", () => { box.hidden = true; });  // 點任意處關閉（保留）
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") box.hidden = true;
     });
