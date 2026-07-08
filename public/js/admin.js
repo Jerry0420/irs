@@ -419,7 +419,7 @@
 
   // ---------- WebSocket 即時同步 ----------
 
-  const client = new WSClient()
+  const client = new WSClient("/ws?role=admin")   // admin 角色才會收到即時票數推送
     .on("_open", () => {
       const el = $("conn-status");
       el.textContent = "● 即時連線中";

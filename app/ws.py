@@ -8,26 +8,28 @@ BROADCAST_THROTTLE_SECONDS = 0.1
 
 class ConnectionManager:
     def __init__(self):
-        self._connections: set[WebSocket] = set()
+        self._connections: dict[WebSocket, str] = {}       # ws -> 角色（admin / voter）
         self._pending_qids: set[str] = set()
         self._pending_pins: dict[str, list[dict]] = {}     # question_id -> 新增 pins
         self._pending_removed: dict[str, list[str]] = {}   # question_id -> 移除的 pin ids
         self._flush_task: asyncio.Task | None = None
         self._flush_payload = None  # 由 main 注入：(qid, new_pins, removed_ids) -> 訊息
 
-    async def connect(self, ws: WebSocket) -> None:
+    async def connect(self, ws: WebSocket, role: str = "voter") -> None:
         await ws.accept()
-        self._connections.add(ws)
+        self._connections[ws] = role
 
     def disconnect(self, ws: WebSocket) -> None:
-        self._connections.discard(ws)
+        self._connections.pop(ws, None)
 
     @property
     def count(self) -> int:
         return len(self._connections)
 
-    async def broadcast(self, message: dict) -> None:
-        for ws in list(self._connections):
+    async def broadcast(self, message: dict, only_role: str | None = None) -> None:
+        for ws, role in list(self._connections.items()):
+            if only_role is not None and role != only_role:
+                continue
             try:
                 await ws.send_json(message)
             except Exception:
@@ -57,4 +59,5 @@ class ConnectionManager:
         for qid in qids:
             message = self._flush_payload(qid, pins.get(qid, []), removed.get(qid, []))
             if message:
-                await self.broadcast(message)
+                # 即時票數/圖釘只推給後台（管理與投影頁），觀眾端不需要
+                await self.broadcast(message, only_role="admin")

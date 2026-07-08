@@ -106,6 +106,15 @@ a.btn { text-decoration: none; text-align: center; line-height: 1.9; }
   font-size: .95rem;
 }
 
+/* 已投票鎖定時：自己選的選項保持醒目，其餘變淡 */
+.option-list .btn.chosen[disabled] {
+  opacity: 1;
+  background: var(--ok);
+  border-color: var(--ok);
+}
+
+.option-list .btn.chosen[disabled]::after { content: "  ✓"; }
+
 .btn--danger { border-color: var(--pin); color: var(--pin); background: transparent; }
 .btn--primary-outline { border-color: var(--accent); color: var(--accent); background: transparent; }
 .btn[disabled] { opacity: .45; cursor: not-allowed; }
@@ -128,6 +137,7 @@ a.btn { text-decoration: none; text-align: center; line-height: 1.9; }
 
 .lock-banner strong { color: var(--ok); }
 .lock-banner .btn { margin-top: 12px; }
+.my-choice { margin-top: 4px; color: var(--ink-soft); font-size: 1rem; }
 
 .waiting {
   text-align: center;

@@ -83,23 +83,38 @@ def _vote_update_message(
 manager.set_flush_payload_builder(_vote_update_message)
 
 
-def _question_payload(q) -> dict:
-    """題目公開資料 + 題號（依目前排序）與總題數。"""
+def _question_payload(q, include_results: bool = True) -> dict:
+    """題目公開資料 + 題號（依目前排序）與總題數。
+
+    觀眾端（include_results=False）不需要即時結果，剔除 votes/pins 減少推送量。
+    """
     p = q.public()
     p["number"] = next((i + 1 for i, x in enumerate(state.questions) if x.id == q.id), None)
     p["total"] = len(state.questions)
+    if not include_results:
+        p.pop("votes", None)
+        p.pop("pins", None)
     return p
 
 
-def _state_init_payload() -> dict:
+def _state_init_payload(role: str) -> dict:
     q = state.active
     return {
         "type": "state:init",
         "payload": {
             "activeQuestionId": state.active_question_id,
-            "question": _question_payload(q) if q else None,
+            "question": _question_payload(q, include_results=(role == "admin")) if q else None,
         },
     }
+
+
+async def _broadcast_question_event(msg_type: str, q, extra: dict | None = None) -> None:
+    """向兩種角色各推一份題目訊息：後台含結果數據、觀眾端不含。"""
+    for role in ("admin", "voter"):
+        payload = {"question": _question_payload(q, include_results=(role == "admin"))}
+        if extra:
+            payload.update(extra)
+        await manager.broadcast({"type": msg_type, "payload": payload}, only_role=role)
 
 
 # ---------- 頁面 ----------
@@ -148,7 +163,7 @@ async def list_questions():
 @app.post("/api/questions", status_code=201, dependencies=[Depends(require_admin)])
 async def create_question(data: QuestionIn):
     q = state.create(data)
-    await manager.broadcast({"type": "questions:changed", "payload": {}})
+    await manager.broadcast({"type": "questions:changed", "payload": {}}, only_role="admin")
     return q.public()
 
 
@@ -157,11 +172,9 @@ async def update_question(question_id: str, data: QuestionIn):
     q = state.update(question_id, data)
     if not q:
         raise HTTPException(404, "question not found")
-    await manager.broadcast({"type": "questions:changed", "payload": {}})
+    await manager.broadcast({"type": "questions:changed", "payload": {}}, only_role="admin")
     if question_id == state.active_question_id:
-        await manager.broadcast(
-            {"type": "question:switch", "payload": {"question": _question_payload(q)}}
-        )
+        await _broadcast_question_event("question:switch", q)
     return q.public()
 
 
@@ -170,7 +183,7 @@ async def delete_question(question_id: str):
     was_active = question_id == state.active_question_id
     if not state.delete(question_id):
         raise HTTPException(404, "question not found")
-    await manager.broadcast({"type": "questions:changed", "payload": {}})
+    await manager.broadcast({"type": "questions:changed", "payload": {}}, only_role="admin")
     if was_active:
         await manager.broadcast(
             {"type": "question:switch", "payload": {"question": None}}
@@ -186,12 +199,10 @@ class ReorderIn(BaseModel):
 async def reorder_questions(data: ReorderIn):
     if not state.reorder(data.ids):
         raise HTTPException(400, "ids 必須恰為現有題目 id 的排列")
-    await manager.broadcast({"type": "questions:changed", "payload": {}})
+    await manager.broadcast({"type": "questions:changed", "payload": {}}, only_role="admin")
     # 排序改變會影響題號，若有進行中題目則同步更新各端顯示
     if state.active:
-        await manager.broadcast(
-            {"type": "question:switch", "payload": {"question": _question_payload(state.active)}}
-        )
+        await _broadcast_question_event("question:switch", state.active)
     return {"ok": True}
 
 
@@ -200,9 +211,7 @@ async def activate_question(question_id: str):
     q = state.activate(question_id)
     if not q:
         raise HTTPException(404, "question not found")
-    await manager.broadcast(
-        {"type": "question:switch", "payload": {"question": _question_payload(q)}}
-    )
+    await _broadcast_question_event("question:switch", q)
     return {"ok": True, "activeQuestionId": question_id}
 
 
@@ -211,16 +220,8 @@ async def reset_question(question_id: str):
     q = state.reset(question_id)
     if not q:
         raise HTTPException(404, "question not found")
-    await manager.broadcast(
-        {
-            "type": "vote:reset",
-            "payload": {
-                "questionId": q.id,
-                "round": q.round,
-                "question": _question_payload(q),
-            },
-        }
-    )
+    await _broadcast_question_event("vote:reset", q,
+                                    extra={"questionId": q.id, "round": q.round})
     return {"ok": True, "round": q.round}
 
 
@@ -251,9 +252,10 @@ async def qrcode_svg(text: str = Query(..., max_length=500)):
 
 @app.websocket("/ws")
 async def ws_endpoint(ws: WebSocket):
-    await manager.connect(ws)
+    role = "admin" if ws.query_params.get("role") == "admin" else "voter"
+    await manager.connect(ws, role)
     try:
-        await ws.send_json(_state_init_payload())
+        await ws.send_json(_state_init_payload(role))
         while True:
             msg = await ws.receive_json()
             msg_type = msg.get("type")

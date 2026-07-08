@@ -17,7 +17,7 @@ function openLightbox(src, caption = "", opts = {}) {
   (document.fullscreenElement || document.body).appendChild(box);
   const img = box.querySelector("img");
   img.src = src;
-  img.style.width = opts.stretch ? "min(84vw, 68vh)" : "";
+  img.style.width = opts.stretch ? "min(60vw, 52vh)" : "";
   box.querySelector(".lightbox-caption").textContent = caption;
   box.hidden = false;
 }

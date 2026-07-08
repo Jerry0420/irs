@@ -15,19 +15,6 @@ restart_server:
 	@sleep 1
 	@nohup /home/ec2-user/irs/run.sh > uvicorn.log 2>&1 &
 
-# curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -o ./cloudflared && chmod +x ./cloudflared && sudo mv ./cloudflared /usr/local
-restart_tunnel:
-	@echo "Restarting Cloudflare Tunnel..."
-	@pkill -x cloudflared || true
-	@sleep 1
-	@nohup cloudflared tunnel --url http://localhost:3000 > cloudflared.log 2>&1 &
-	@echo "Waiting for tunnel URL..."
-	@for i in $$(seq 1 15); do \
-	  URL=$$(grep -oE 'https://[a-z0-9-]+\.trycloudflare\.com' cloudflared.log | head -1); \
-	  if [ -n "$$URL" ]; then echo "$$URL"; exit 0; fi; \
-	  sleep 1; \
-	done; echo "取得網址逾時，請查看 cloudflared.log"; exit 1
-
 kill_ngrok:
 	@echo "Killing ngrok..."
 	@pkill -x ngrok || true
@@ -35,7 +22,3 @@ kill_ngrok:
 kill_server:
 	@echo "Killing server..."
 	@pkill -x uvicorn || true
-
-kill_tunnel:
-	@echo "Killing Cloudflare Tunnel..."
-	@pkill -x cloudflared || true

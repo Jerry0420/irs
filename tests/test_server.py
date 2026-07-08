@@ -118,7 +118,7 @@ def test_vote_and_duplicate_rejected(client):
     q = data["questions"][0]
     oid = q["options"][0]["id"]
 
-    with client.websocket_connect("/ws") as ws:
+    with client.websocket_connect("/ws?role=admin") as ws:
         init = recv_type(ws, "state:init")
         assert init["question"]["id"] == q["id"]
         assert init["question"]["number"] == 1          # 題號（依排序）
@@ -139,13 +139,13 @@ def test_same_voter_rejected_across_connections(client):
     q = data["questions"][0]
     oid = q["options"][0]["id"]
 
-    with client.websocket_connect("/ws") as a:
+    with client.websocket_connect("/ws?role=admin") as a:
         recv_type(a, "state:init")
         cast(a, q["id"], oid, voter="voter-x")
         recv_type(a, "vote:accepted")
         recv_type(a, "vote:update")
 
-    with client.websocket_connect("/ws") as b:
+    with client.websocket_connect("/ws?role=admin") as b:
         recv_type(b, "state:init")
         cast(b, q["id"], oid, voter="voter-x")
         assert recv_type(b, "vote:rejected")["reason"] == "already_voted"
@@ -154,7 +154,7 @@ def test_same_voter_rejected_across_connections(client):
 def test_vote_requires_voter_id(client):
     data = get_state(client)
     q = data["questions"][0]
-    with client.websocket_connect("/ws") as ws:
+    with client.websocket_connect("/ws?role=admin") as ws:
         recv_type(ws, "state:init")
         ws.send_json({"type": "vote:cast", "payload": {
             "questionId": q["id"], "optionId": q["options"][0]["id"]}})
@@ -164,7 +164,7 @@ def test_vote_requires_voter_id(client):
 def test_vote_rejected_when_not_active(client):
     data = get_state(client)
     inactive = data["questions"][1]
-    with client.websocket_connect("/ws") as ws:
+    with client.websocket_connect("/ws?role=admin") as ws:
         recv_type(ws, "state:init")
         cast(ws, inactive["id"], inactive["options"][0]["id"])
         assert recv_type(ws, "vote:rejected")["reason"] == "not_active"
@@ -176,7 +176,7 @@ def test_image4_pin_validation(client):
     oid = q["options"][0]["id"]
     client.post(f"/api/questions/{q['id']}/activate")
 
-    with client.websocket_connect("/ws") as ws:
+    with client.websocket_connect("/ws?role=admin") as ws:
         recv_type(ws, "state:init")
 
         cast(ws, q["id"], oid, pin={"x": 1.5, "y": 0.5})   # 座標超出 0~1
@@ -194,6 +194,44 @@ def test_image4_pin_validation(client):
         assert np["id"]
 
 
+# ---------- 觀眾角色：不收即時結果 ----------
+
+def test_voter_gets_trimmed_payload_and_no_updates(client):
+    data = get_state(client)
+    q = data["questions"][0]
+    oid = q["options"][0]["id"]
+
+    with client.websocket_connect("/ws?role=admin") as admin, \
+         client.websocket_connect("/ws") as voter:   # 未帶角色 = 觀眾
+        recv_type(admin, "state:init")
+        init = recv_type(voter, "state:init")
+        # 觀眾的題目 payload 不含即時結果
+        assert "votes" not in init["question"] and "pins" not in init["question"]
+        assert init["question"]["number"] == 1       # 題號照常提供
+
+        cast(voter, q["id"], oid, voter="voter-quiet")
+        recv_type(voter, "vote:accepted")
+        # 後台會收到 vote:update；觀眾不會——觀眾的下一則訊息是重複投票的拒絕
+        assert recv_type(admin, "vote:update")["votes"][oid] == 1
+        cast(voter, q["id"], oid, voter="voter-quiet")
+        assert recv_type(voter, "vote:rejected")["reason"] == "already_voted"
+
+
+def test_voter_switch_and_reset_payload_trimmed(client):
+    data = get_state(client)
+    target = data["questions"][2]["id"]
+    with client.websocket_connect("/ws") as voter:
+        recv_type(voter, "state:init")
+        client.post(f"/api/questions/{target}/activate")
+        payload = recv_type(voter, "question:switch")
+        assert "votes" not in payload["question"] and "pins" not in payload["question"]
+
+        client.post(f"/api/questions/{target}/reset")
+        payload = recv_type(voter, "vote:reset")
+        assert "votes" not in payload["question"] and "pins" not in payload["question"]
+        assert payload["round"] == 1
+
+
 # ---------- 取消投票 / 重新投票 ----------
 
 def test_cancel_vote_and_revote(client):
@@ -201,7 +239,7 @@ def test_cancel_vote_and_revote(client):
     q = data["questions"][0]
     oid_a, oid_b = q["options"][0]["id"], q["options"][1]["id"]
 
-    with client.websocket_connect("/ws") as ws:
+    with client.websocket_connect("/ws?role=admin") as ws:
         recv_type(ws, "state:init")
         cast(ws, q["id"], oid_a)
         recv_type(ws, "vote:accepted")
@@ -222,7 +260,7 @@ def test_cancel_vote_and_revote(client):
 def test_cancel_without_vote_rejected(client):
     data = get_state(client)
     q = data["questions"][0]
-    with client.websocket_connect("/ws") as ws:
+    with client.websocket_connect("/ws?role=admin") as ws:
         recv_type(ws, "state:init")
         ws.send_json({"type": "vote:cancel", "payload": {
             "questionId": q["id"], "voterId": "nobody"}})
@@ -235,7 +273,7 @@ def test_cancel_image4_removes_pin(client):
     oid = q["options"][1]["id"]
     client.post(f"/api/questions/{q['id']}/activate")
 
-    with client.websocket_connect("/ws") as ws:
+    with client.websocket_connect("/ws?role=admin") as ws:
         recv_type(ws, "state:init")
         cast(ws, q["id"], oid, pin={"x": 0.5, "y": 0.5})
         recv_type(ws, "vote:accepted")
@@ -258,7 +296,7 @@ def test_reset_clears_votes_and_allows_revote(client):
     q = data["questions"][0]
     oid = q["options"][0]["id"]
 
-    with client.websocket_connect("/ws") as ws:
+    with client.websocket_connect("/ws?role=admin") as ws:
         recv_type(ws, "state:init")
         cast(ws, q["id"], oid)
         recv_type(ws, "vote:accepted")
@@ -282,7 +320,7 @@ def test_broadcast_between_clients(client):
     q = data["questions"][0]
     oid = q["options"][1]["id"]
 
-    with client.websocket_connect("/ws") as a, client.websocket_connect("/ws") as b:
+    with client.websocket_connect("/ws?role=admin") as a, client.websocket_connect("/ws?role=admin") as b:
         recv_type(a, "state:init")
         recv_type(b, "state:init")
 
@@ -307,7 +345,7 @@ def test_votes_stored_outside_questions_file(client):
 
     data = get_state(client)
     q = data["questions"][0]
-    with client.websocket_connect("/ws") as ws:
+    with client.websocket_connect("/ws?role=admin") as ws:
         recv_type(ws, "state:init")
         cast(ws, q["id"], q["options"][0]["id"])
         recv_type(ws, "vote:accepted")
@@ -329,7 +367,7 @@ def test_results_survive_reload(client):
     data = get_state(client)
     q = data["questions"][0]
     oid = q["options"][0]["id"]
-    with client.websocket_connect("/ws") as ws:
+    with client.websocket_connect("/ws?role=admin") as ws:
         recv_type(ws, "state:init")
         cast(ws, q["id"], oid)
         recv_type(ws, "vote:accepted")
